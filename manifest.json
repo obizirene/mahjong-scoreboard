@@ -1,0 +1,22 @@
+{
+  "name": "學府路雀聖殿堂 - 麻將戰績記分板",
+  "short_name": "學府路雀聖殿堂",
+  "description": "專業手機版麻將記分板與月度 MVP 排行榜",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071710",
+  "theme_color": "#0b2b1e",
+  "icons": [
+    {
+      "src": "assets/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

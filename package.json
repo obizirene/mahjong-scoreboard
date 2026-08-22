@@ -1,7 +1,7 @@
 {
-  "name": "mahjong-hall-scoreboard",
+  "name": "mahjong-scoreboard",
   "version": "1.0.0",
-  "description": "🀅 雀神殿堂 - 麻將戰績記分板與月度 MVP 網站",
+  "description": "🀅 學府路雀聖殿堂 - 麻將戰績記分板與月度 MVP 網站",
   "scripts": {
     "start": "npx serve ."
   },
