@@ -525,6 +525,14 @@ body {
   .grid-3 {
     grid-template-columns: 1fr !important;
   }
+
+  .players-input-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .meta-row-2col {
+    grid-template-columns: 1fr !important;
+  }
   
   .quick-inherit-bar {
     flex-direction: column !important;
@@ -750,6 +758,18 @@ body {
   font-family: inherit;
   outline: none;
   min-height: 44px;
+}
+
+.custom-input[type="date"] {
+  text-align: center;
+  font-weight: 700;
+  color-scheme: dark;
+}
+
+.meta-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 
 .custom-input:focus, .custom-select:focus {
