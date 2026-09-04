@@ -22,6 +22,8 @@ const AppState = {
   players: [],
   rounds: [],
   selectedMonth: '',
+  selectedYear: '',
+  mvpMode: 'month', // 'month' or 'year'
   calc: {
     base: 30,
     tai: 10,
@@ -283,7 +285,7 @@ function switchTab(tabId) {
 }
 
 // ==========================================
-// 6. TAB 1: 月度 MVP 榮譽榜
+// 6. TAB 1: 月度與年度 MVP 榮譽殿堂
 // ==========================================
 function getAvailableMonths() {
   const months = new Set();
@@ -300,24 +302,89 @@ function getAvailableMonths() {
   return Array.from(months).sort().reverse();
 }
 
-function initMonthSelector() {
-  const select = document.getElementById('select-month');
-  if (!select) return;
+function getAvailableYears() {
+  const years = new Set();
+  const now = new Date();
+  years.add(String(now.getFullYear()));
 
-  const months = getAvailableMonths();
-  if (!AppState.selectedMonth || !months.includes(AppState.selectedMonth)) {
-    AppState.selectedMonth = months[0];
+  AppState.rounds.forEach(r => {
+    if (r.date && r.date.length >= 4) {
+      years.add(r.date.substring(0, 4));
+    }
+  });
+
+  return Array.from(years).sort().reverse();
+}
+
+function initMVPSelectors() {
+  const selectMonth = document.getElementById('select-month');
+  const selectYear = document.getElementById('select-year');
+  const label = document.getElementById('select-month-label');
+  const btnMonth = document.getElementById('btn-mvp-month');
+  const btnYear = document.getElementById('btn-mvp-year');
+
+  if (btnMonth && btnYear) {
+    btnMonth.onclick = () => {
+      if (AppState.mvpMode !== 'month') {
+        AppState.mvpMode = 'month';
+        btnMonth.classList.add('active');
+        btnYear.classList.remove('active');
+        renderMVPView();
+      }
+    };
+
+    btnYear.onclick = () => {
+      if (AppState.mvpMode !== 'year') {
+        AppState.mvpMode = 'year';
+        btnYear.classList.add('active');
+        btnMonth.classList.remove('active');
+        renderMVPView();
+      }
+    };
   }
 
-  select.innerHTML = months.map(m => {
-    const [y, mm] = m.split('-');
-    return `<option value="${m}" ${m === AppState.selectedMonth ? 'selected' : ''}>${y} 年 ${parseInt(mm, 10)} 月份</option>`;
-  }).join('');
+  const isYear = AppState.mvpMode === 'year';
 
-  select.onchange = (e) => {
-    AppState.selectedMonth = e.target.value;
-    renderMVPView();
-  };
+  if (isYear) {
+    if (selectMonth) selectMonth.classList.add('hidden');
+    if (selectYear) selectYear.classList.remove('hidden');
+    if (label) label.textContent = '🎆 選擇年份：';
+
+    if (selectYear) {
+      const years = getAvailableYears();
+      if (!AppState.selectedYear || !years.includes(AppState.selectedYear)) {
+        AppState.selectedYear = years[0];
+      }
+      selectYear.innerHTML = years.map(y => {
+        return `<option value="${y}" ${y === AppState.selectedYear ? 'selected' : ''}>${y} 全年度</option>`;
+      }).join('');
+
+      selectYear.onchange = (e) => {
+        AppState.selectedYear = e.target.value;
+        renderMVPView();
+      };
+    }
+  } else {
+    if (selectYear) selectYear.classList.add('hidden');
+    if (selectMonth) selectMonth.classList.remove('hidden');
+    if (label) label.textContent = '📅 選擇月份：';
+
+    if (selectMonth) {
+      const months = getAvailableMonths();
+      if (!AppState.selectedMonth || !months.includes(AppState.selectedMonth)) {
+        AppState.selectedMonth = months[0];
+      }
+      selectMonth.innerHTML = months.map(m => {
+        const [y, mm] = m.split('-');
+        return `<option value="${m}" ${m === AppState.selectedMonth ? 'selected' : ''}>${y} 年 ${parseInt(mm, 10)} 月份</option>`;
+      }).join('');
+
+      selectMonth.onchange = (e) => {
+        AppState.selectedMonth = e.target.value;
+        renderMVPView();
+      };
+    }
+  }
 }
 
 function calculateMonthlyStats(month) {
@@ -376,14 +443,87 @@ function calculateMonthlyStats(month) {
     .sort((a, b) => b.profit - a.profit);
 
   return {
-    monthRounds,
+    rounds: monthRounds,
+    activeStats
+  };
+}
+
+function calculateYearlyStats(year) {
+  const yearRounds = AppState.rounds.filter(r => r.date && r.date.startsWith(year));
+  const playerStats = {};
+
+  AppState.players.forEach(p => {
+    playerStats[p.id] = {
+      player: p,
+      profit: 0,
+      roundsCount: 0,
+      wins: 0,
+      losses: 0,
+      maxWin: 0,
+      maxLoss: 0
+    };
+  });
+
+  yearRounds.forEach(round => {
+    Object.entries(round.scores || {}).forEach(([pid, score]) => {
+      if (!playerStats[pid]) {
+        playerStats[pid] = {
+          player: { id: pid, name: '牌友', color: '#10b981', title: '' },
+          profit: 0,
+          roundsCount: 0,
+          wins: 0,
+          losses: 0,
+          maxWin: 0,
+          maxLoss: 0
+        };
+      }
+      const val = Number(score) || 0;
+      playerStats[pid].profit += val;
+      playerStats[pid].roundsCount += 1;
+      if (val > 0) {
+        playerStats[pid].wins += 1;
+        if (val > playerStats[pid].maxWin) playerStats[pid].maxWin = val;
+      } else if (val < 0) {
+        playerStats[pid].losses += 1;
+        if (val < playerStats[pid].maxLoss) playerStats[pid].maxLoss = val;
+      }
+    });
+  });
+
+  const activeStats = Object.values(playerStats)
+    .filter(s => s.roundsCount > 0)
+    .map(s => {
+      const winRate = s.roundsCount > 0 ? ((s.wins / s.roundsCount) * 100) : 0;
+      const avg = s.roundsCount > 0 ? Math.round(s.profit / s.roundsCount) : 0;
+      return {
+        ...s,
+        winRate,
+        avg
+      };
+    })
+    .sort((a, b) => b.profit - a.profit);
+
+  return {
+    rounds: yearRounds,
     activeStats
   };
 }
 
 function renderMVPView() {
-  initMonthSelector();
-  const { monthRounds, activeStats } = calculateMonthlyStats(AppState.selectedMonth);
+  initMVPSelectors();
+  const isYear = AppState.mvpMode === 'year';
+
+  const { rounds, activeStats } = isYear 
+    ? calculateYearlyStats(AppState.selectedYear)
+    : calculateMonthlyStats(AppState.selectedMonth);
+
+  const h2 = document.getElementById('mvp-title-h2');
+  const pDesc = document.getElementById('mvp-title-p');
+  const tableTitle = document.getElementById('table-header-title');
+
+  if (h2) h2.textContent = isYear ? `👑 ${AppState.selectedYear} 年度 MVP 殿堂` : '🏆 月度 MVP 榮譽榜';
+  if (pDesc) pDesc.textContent = isYear ? `${AppState.selectedYear} 全年度累積總戰術力與戰績王者榮耀榜` : '當月戰局總收益與勝將率實時榜單';
+  if (tableTitle) tableTitle.textContent = isYear ? `📊 ${AppState.selectedYear} 全年度總戰績排行榜` : '📊 當月總戰績排行榜';
 
   const podiumContainer = document.getElementById('podium-container');
   const awardsContainer = document.getElementById('special-awards-grid');
@@ -391,11 +531,12 @@ function renderMVPView() {
   const summaryText = document.getElementById('monthly-summary-text');
 
   if (summaryText) {
-    const totalFlow = monthRounds.reduce((acc, r) => {
+    const totalFlow = rounds.reduce((acc, r) => {
       const roundPositive = Object.values(r.scores || {}).reduce((s, v) => v > 0 ? s + v : s, 0);
       return acc + roundPositive;
     }, 0);
-    summaryText.innerHTML = `共 <strong>${monthRounds.length}</strong> 將對局 ‧ 累計流動資金 <strong>$ ${totalFlow.toLocaleString()}</strong>`;
+    const periodLabel = isYear ? '全年度共' : '共';
+    summaryText.innerHTML = `${periodLabel} <strong>${rounds.length}</strong> 將對局 ‧ 累計流動資金 <strong>$ ${totalFlow.toLocaleString()}</strong>`;
   }
 
   // Render Podium (Top 3)
@@ -404,7 +545,7 @@ function renderMVPView() {
       podiumContainer.innerHTML = `
         <div class="empty-state card glass-card text-center p-8 w-full">
           <span style="font-size: 3rem;">🀄</span>
-          <h4 class="mt-2 text-gold font-bold">本月份尚無戰績紀錄</h4>
+          <h4 class="mt-2 text-gold font-bold">${isYear ? '本年度' : '本月份'}尚無戰績紀錄</h4>
           <p class="text-subtle mt-1">點擊右上角「記新的一將」開始記錄戰局！</p>
         </div>
       `;
@@ -425,6 +566,7 @@ function renderMVPView() {
         const crownHtml = rank === 1 ? '<div class="crown-badge">👑</div>' : '';
         const profitSign = stat.profit >= 0 ? '+' : '';
         const profitColor = stat.profit >= 0 ? 'text-gold' : 'text-red';
+        const rankTitleDefault = isYear ? (rank === 1 ? '年度王者' : '年度高手') : (rank === 1 ? '當月雀神' : '牌友');
 
         return `
           <div class="podium-card rank-${rank}">
@@ -434,7 +576,7 @@ function renderMVPView() {
               <span class="rank-badge">${rank}</span>
             </div>
             <div class="podium-name">${p.name}</div>
-            <div class="podium-title">${p.title || '牌友'}</div>
+            <div class="podium-title">${p.title || rankTitleDefault}</div>
             <div class="podium-profit ${profitColor}">${profitSign}$ ${stat.profit.toLocaleString()}</div>
             <div class="podium-stats-row">
               <span>勝率 ${stat.winRate.toFixed(1)}%</span>
@@ -481,12 +623,23 @@ function renderMVPView() {
         `;
       };
 
+      const mvpTitle = isYear ? '年度雀神 (年度 MVP)' : '月度雀神 (MVP)';
+      const mvpDesc = isYear ? `${AppState.selectedYear} 全年度戰績淨利冠軍` : '當月戰績淨利冠軍';
+      const winRateTitle = isYear ? '年度勝率王' : '勝率之王';
+      const winRateDesc = isYear ? '全年度勝將率最高牌友' : '勝將率最高牌友';
+      const bigWinTitle = isYear ? '年度單將暴發戶' : '單將暴發戶';
+      const bigWinDesc = isYear ? '全年度單場最高獨贏收益' : '單場最高獨贏收益';
+      const philTitle = isYear ? '年度大方慈善家' : '大方慈善家';
+      const philDesc = isYear ? '全年度默默奉獻籌碼之大功臣' : '默默奉獻籌碼之功臣';
+      const workTitle = isYear ? '年度雀界勞模' : '雀界勞模';
+      const workDesc = isYear ? '全年度參戰將數最狂熱' : '出賽將數最狂熱';
+
       awardsContainer.innerHTML = `
-        ${renderAwardCard('👑', '月度雀神 (MVP)', mvp, '當月戰績淨利冠軍', `+ $ ${mvp.profit.toLocaleString()}`)}
-        ${renderAwardCard('🎯', '勝率之王', winRateKing, '勝將率最高牌友', `${winRateKing.winRate.toFixed(1)}%`)}
-        ${renderAwardCard('🚀', '單將暴發戶', bigWinner, '單場最高獨贏收益', `+ $ ${bigWinner.maxWin.toLocaleString()}`)}
-        ${renderAwardCard('💸', '大方慈善家', philanthropist, '默默奉獻籌碼之功臣', `$ ${philanthropist.profit.toLocaleString()}`)}
-        ${renderAwardCard('🀄', '雀界勞模', workhorse, '出賽將數最狂熱', `${workhorse.roundsCount} 將`)}
+        ${renderAwardCard('👑', mvpTitle, mvp, mvpDesc, `+ $ ${mvp.profit.toLocaleString()}`)}
+        ${renderAwardCard('🎯', winRateTitle, winRateKing, winRateDesc, `${winRateKing.winRate.toFixed(1)}%`)}
+        ${renderAwardCard('🚀', bigWinTitle, bigWinner, bigWinDesc, `+ $ ${bigWinner.maxWin.toLocaleString()}`)}
+        ${renderAwardCard('💸', philTitle, philanthropist, philDesc, `$ ${philanthropist.profit.toLocaleString()}`)}
+        ${renderAwardCard('🀄', workTitle, workhorse, workDesc, `${workhorse.roundsCount} 將`)}
       `;
     }
   }
@@ -497,7 +650,7 @@ function renderMVPView() {
       tbody.innerHTML = `
         <tr>
           <td colspan="7" class="text-center p-6 text-subtle">
-            本月尚無紀錄，點擊右上角「記新的一將」開始記錄！
+            ${isYear ? '本年度' : '本月'}尚無紀錄，點擊右上角「記新的一將」開始記錄！
           </td>
         </tr>
       `;
@@ -1095,16 +1248,108 @@ async function handleDeleteRound(roundId) {
 // ==========================================
 // 10. MODAL 1: 記新的一將 & 零和檢查
 // ==========================================
+// 10. MODAL 1: 記新的一將 & 零和檢查 (支援中途換手多人紀錄)
+// ==========================================
+let activeLoggerSlots = []; // [{ pid: 'p1', score: '' }, ...]
+
+function renderLoggerSlotCards() {
+  const container = document.getElementById('players-input-grid');
+  if (!container) return;
+
+  const windLabels = ['東家 / 1 號位', '南家 / 2 號位', '西家 / 3 號位', '北家 / 4 號位'];
+
+  container.innerHTML = activeLoggerSlots.map((slot, idx) => {
+    const isDeletable = activeLoggerSlots.length > 4 && idx >= 4;
+    const tagLabel = windLabels[idx] || `換手玩家 / ${idx + 1} 號位`;
+
+    const playerOptions = AppState.players.map((p) => {
+      const isSelected = p.id === slot.pid;
+      return `<option value="${p.id}" ${isSelected ? 'selected' : ''}>${p.name} (${p.title || '牌友'})</option>`;
+    }).join('');
+
+    const deleteBtnHtml = isDeletable 
+      ? `<button type="button" class="btn-remove-slot" data-index="${idx}">🗑️ 移除此位</button>` 
+      : '';
+
+    return `
+      <div class="player-score-card" data-index="${idx}">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="card-tag">${tagLabel}</div>
+          ${deleteBtnHtml}
+        </div>
+        <select class="custom-select select-active-player" data-index="${idx}">
+          ${playerOptions}
+        </select>
+        <div class="score-input-wrapper">
+          <label>當將淨輸贏 ($)</label>
+          <input type="number" class="custom-input input-player-score" data-index="${idx}" value="${slot.score !== undefined ? slot.score : ''}" placeholder="正贏負輸" step="10">
+          <div class="touch-modifiers">
+            <button type="button" class="mod-btn" data-index="${idx}" data-val="100">+100</button>
+            <button type="button" class="mod-btn" data-index="${idx}" data-val="-100">-100</button>
+            <button type="button" class="mod-btn" data-index="${idx}" data-val="500">+500</button>
+            <button type="button" class="mod-btn" data-index="${idx}" data-val="-500">-500</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Re-bind event listeners
+  container.querySelectorAll('.select-active-player').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const i = parseInt(e.target.getAttribute('data-index'), 10);
+      if (activeLoggerSlots[i]) activeLoggerSlots[i].pid = e.target.value;
+      updateBalanceCheck();
+    });
+  });
+
+  container.querySelectorAll('.input-player-score').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const i = parseInt(e.target.getAttribute('data-index'), 10);
+      if (activeLoggerSlots[i]) activeLoggerSlots[i].score = e.target.value;
+      updateBalanceCheck();
+    });
+  });
+
+  container.querySelectorAll('.mod-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.getAttribute('data-index'), 10);
+      const val = parseInt(btn.getAttribute('data-val'), 10) || 0;
+      const input = container.querySelector(`.input-player-score[data-index="${i}"]`);
+      if (input && activeLoggerSlots[i]) {
+        const cur = parseInt(input.value, 10) || 0;
+        const nextVal = cur + val;
+        input.value = nextVal;
+        activeLoggerSlots[i].score = nextVal;
+        updateBalanceCheck();
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-remove-slot').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.getAttribute('data-index'), 10);
+      if (activeLoggerSlots.length > 4 && i >= 4) {
+        const removedPid = activeLoggerSlots[i].pid;
+        const p = AppState.players.find(x => x.id === removedPid);
+        activeLoggerSlots.splice(i, 1);
+        renderLoggerSlotCards();
+        showToast(`已移除${p ? '玩家【' + p.name + '】' : ''}欄位！`, 'info');
+      }
+    });
+  });
+
+  updateBalanceCheck();
+}
+
 function initScoreLoggerModal() {
   const modal = document.getElementById('modal-score-logger');
   const btnOpenDesktop = document.getElementById('btn-new-round');
   const btnOpenMobile = document.getElementById('fab-new-round');
   const btnInherit = document.getElementById('btn-inherit-last');
+  const btnAddSlot = document.getElementById('btn-add-logger-slot');
   const btnSave = document.getElementById('btn-save-round');
   const btnAutoBalance = document.getElementById('btn-auto-balance');
-  const scoreInputs = document.querySelectorAll('.input-player-score');
-  const playerSelects = document.querySelectorAll('.select-active-player');
-  const modBtns = document.querySelectorAll('.mod-btn');
 
   function openModal() {
     if (AppState.players.length < 4) {
@@ -1120,15 +1365,13 @@ function initScoreLoggerModal() {
     document.getElementById('log-round-title').value = `第 ${todayRounds.length + 1} 將`;
     document.getElementById('log-note').value = '';
 
-    playerSelects.forEach((sel, idx) => {
-      sel.innerHTML = AppState.players.map((p, pIdx) => {
-        return `<option value="${p.id}" ${pIdx === idx ? 'selected' : ''}>${p.name} (${p.title || '牌友'})</option>`;
-      }).join('');
-    });
+    // Initialize 4 default slots with unique players
+    activeLoggerSlots = AppState.players.slice(0, 4).map(p => ({
+      pid: p.id,
+      score: ''
+    }));
 
-    scoreInputs.forEach(input => input.value = '');
-
-    updateBalanceCheck();
+    renderLoggerSlotCards();
     modal.classList.remove('hidden');
   }
 
@@ -1144,50 +1387,54 @@ function initScoreLoggerModal() {
       const last = AppState.rounds[AppState.rounds.length - 1];
       const pids = Object.keys(last.scores || {});
       if (pids.length >= 4) {
-        playerSelects.forEach((sel, idx) => {
-          if (pids[idx]) sel.value = pids[idx];
-        });
-        showToast('已帶入上一將 4 位玩家！', 'success');
+        activeLoggerSlots = pids.map(pid => ({
+          pid,
+          score: ''
+        }));
+        renderLoggerSlotCards();
+        showToast(`已帶入上一將 ${pids.length} 位名單！`, 'success');
+      } else {
+        showToast('上一將紀錄不符名單格式！', 'error');
       }
     });
   }
 
-  modBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const slot = btn.getAttribute('data-slot');
-      const val = parseInt(btn.getAttribute('data-val'), 10) || 0;
-      const input = document.querySelector(`.input-player-score[data-slot="${slot}"]`);
-      if (input) {
-        const current = parseInt(input.value, 10) || 0;
-        input.value = current + val;
-        updateBalanceCheck();
-      }
+  if (btnAddSlot) {
+    btnAddSlot.addEventListener('click', () => {
+      const selectedPids = activeLoggerSlots.map(s => s.pid);
+      const unselected = AppState.players.find(p => !selectedPids.includes(p.id)) || AppState.players[0];
+
+      activeLoggerSlots.push({
+        pid: unselected ? unselected.id : (AppState.players[0] ? AppState.players[0].id : ''),
+        score: ''
+      });
+      renderLoggerSlotCards();
+      showToast(`已新增第 ${activeLoggerSlots.length} 位換手/參賽玩家欄位！`, 'success');
     });
-  });
-
-  scoreInputs.forEach(input => {
-    input.addEventListener('input', updateBalanceCheck);
-  });
-
-  playerSelects.forEach(sel => {
-    sel.addEventListener('change', updateBalanceCheck);
-  });
+  }
 
   if (btnAutoBalance) {
     btnAutoBalance.addEventListener('click', () => {
+      const inputs = document.querySelectorAll('#players-input-grid .input-player-score');
+      if (inputs.length === 0) return;
+
       let sum = 0;
-      scoreInputs.forEach(input => {
+      inputs.forEach((input) => {
         sum += (parseInt(input.value, 10) || 0);
       });
 
       const diff = -sum;
       if (diff === 0) return;
 
-      const targetInput = scoreInputs[3];
-      const cur = parseInt(targetInput.value, 10) || 0;
-      targetInput.value = cur + diff;
+      // Put diff into last slot
+      const lastIdx = activeLoggerSlots.length - 1;
+      const lastInput = inputs[lastIdx];
+      const cur = parseInt(lastInput.value, 10) || 0;
+      const nextVal = cur + diff;
+      lastInput.value = nextVal;
+      activeLoggerSlots[lastIdx].score = nextVal;
       updateBalanceCheck();
-      showToast(`已自動補平差額 $${diff.toLocaleString()}！`, 'success');
+      showToast(`已自動將差額 $${diff.toLocaleString()} 補平！`, 'success');
     });
   }
 
@@ -1197,18 +1444,24 @@ function initScoreLoggerModal() {
       const title = document.getElementById('log-round-title').value.trim() || '一將對局';
       const note = document.getElementById('log-note').value.trim();
 
-      const selectedPids = Array.from(playerSelects).map(s => s.value);
+      if (activeLoggerSlots.length < 4) {
+        showToast('參賽玩家至少需要 4 人！', 'error');
+        return;
+      }
+
+      const selectedPids = activeLoggerSlots.map(s => s.pid);
       const uniquePids = new Set(selectedPids);
-      if (uniquePids.size < 4) {
-        showToast('上桌的 4 位玩家不能重複，請選擇 4 位不同的牌友！', 'error');
+      if (uniquePids.size < selectedPids.length) {
+        showToast('參賽玩家選擇不能重複，請確認每位選擇不同牌友！', 'error');
         return;
       }
 
       let sum = 0;
       const scores = {};
-      playerSelects.forEach((sel, idx) => {
-        const val = parseInt(scoreInputs[idx].value, 10) || 0;
-        scores[sel.value] = val;
+      activeLoggerSlots.forEach((slot, idx) => {
+        const input = document.querySelector(`#players-input-grid .input-player-score[data-index="${idx}"]`);
+        const val = input ? (parseInt(input.value, 10) || 0) : 0;
+        scores[slot.pid] = val;
         sum += val;
       });
 
@@ -1228,13 +1481,13 @@ function initScoreLoggerModal() {
 
       await syncSaveRound(newRound);
       modal.classList.add('hidden');
-      showToast(`🎉 成功記錄「${title}」戰績！`, 'success');
+      showToast(`🎉 成功記錄「${title}」(${activeLoggerSlots.length}人位) 戰績！`, 'success');
     });
   }
 }
 
 function updateBalanceCheck() {
-  const scoreInputs = document.querySelectorAll('.input-player-score');
+  const scoreInputs = document.querySelectorAll('#players-input-grid .input-player-score');
   const sumDisplay = document.getElementById('balance-sum-display');
   const statusContainer = document.getElementById('balance-status');
   const btnAutoBalance = document.getElementById('btn-auto-balance');
@@ -1774,7 +2027,7 @@ function initModalCloseHandlers() {
 document.addEventListener('DOMContentLoaded', () => {
   loadLocalState();
   initNavigation();
-  initMonthSelector();
+  initMVPSelectors();
   initScoreLoggerModal();
   initPlayerFormModal();
   initAvatarCropper();

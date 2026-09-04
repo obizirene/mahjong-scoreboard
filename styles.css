@@ -583,6 +583,56 @@ body {
   font-size: 0.85rem;
 }
 
+.month-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.selector-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mvp-mode-toggle {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--card-border);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  gap: 3px;
+}
+
+.mvp-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.mvp-toggle-btn:hover {
+  color: var(--text-main);
+}
+
+.mvp-toggle-btn.active {
+  background: linear-gradient(135deg, var(--primary-emerald), #059669);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.mvp-toggle-btn#btn-mvp-year.active {
+  background: linear-gradient(135deg, #d97706, var(--accent-gold-bright));
+  color: #0b2317;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
 /* Glass Card */
 .card {
   background: var(--card-bg);
@@ -1260,6 +1310,23 @@ body {
 .mod-btn:active {
   background: var(--accent-gold);
   color: #000;
+}
+
+.btn-remove-slot {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-remove-slot:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ffffff;
 }
 
 /* Calculator & Preset Hand Pills */

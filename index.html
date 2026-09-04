@@ -33,7 +33,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=8.0">
 </head>
 <body class="theme-emerald">
   <!-- Toast Notification Container -->
@@ -121,16 +121,23 @@
   <!-- Main Content Container -->
   <main class="main-content">
 
-    <!-- ==================== TAB 1: 月度 MVP 殿堂 ==================== -->
+    <!-- ==================== TAB 1: 月度與年度 MVP 榮譽殿堂 ==================== -->
     <section id="tab-mvp" class="tab-page active">
       <div class="section-header">
         <div class="section-title">
-          <h2>🏆 月度 MVP 榮譽榜</h2>
-          <p>當月戰局總收益與勝將率實時榜單</p>
+          <h2 id="mvp-title-h2">🏆 月度 MVP 榮譽榜</h2>
+          <p id="mvp-title-p">當月戰局總收益與勝將率實時榜單</p>
         </div>
         <div class="month-selector-wrapper">
-          <label for="select-month" class="field-label">📅 選擇月份：</label>
-          <select id="select-month" class="custom-select"></select>
+          <div class="mvp-mode-toggle">
+            <button type="button" id="btn-mvp-month" class="mvp-toggle-btn active">📅 月度 MVP</button>
+            <button type="button" id="btn-mvp-year" class="mvp-toggle-btn">🏆 年度 MVP</button>
+          </div>
+          <div class="selector-box">
+            <label id="select-month-label" for="select-month" class="field-label">📅 選擇月份：</label>
+            <select id="select-month" class="custom-select"></select>
+            <select id="select-year" class="custom-select hidden"></select>
+          </div>
         </div>
       </div>
 
@@ -144,10 +151,10 @@
         <!-- JS renders MVP, 勝率之王, 暴發戶, 慈善家, 勤奮狂熱卡片 -->
       </div>
 
-      <!-- Full Monthly Leaderboard Table -->
+      <!-- Full Leaderboard Table -->
       <div class="card glass-card shadow-lg mt-6">
         <div class="card-header">
-          <h3>📊 當月總戰績排行榜</h3>
+          <h3 id="table-header-title">📊 當月總戰績排行榜</h3>
           <span class="text-subtle" id="monthly-summary-text">載入中...</span>
         </div>
         <div class="table-responsive">
@@ -479,77 +486,20 @@
           </div>
         </div>
 
-        <!-- Quick Switch Helper -->
-        <div class="quick-inherit-bar mb-4">
-          <span>💡 快速載入名單：</span>
-          <button id="btn-inherit-last" class="btn btn-xs btn-outline">帶入上一將 4 人</button>
+        <!-- Quick Switch & Mid-game Swap Action Bar -->
+        <div class="quick-inherit-bar mb-4" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <span>💡 快速名單：</span>
+            <button type="button" id="btn-inherit-last" class="btn btn-xs btn-outline">帶入上一將名單</button>
+          </div>
+          <button type="button" id="btn-add-logger-slot" class="btn btn-xs btn-primary glow-effect">
+            ➕ 增加參賽 / 中途換手玩家
+          </button>
         </div>
 
-        <!-- 4 Active Players Inputs -->
-        <div class="players-input-grid">
-          <!-- Slot 0 -->
-          <div class="player-score-card" data-slot="0">
-            <div class="card-tag">東家 / 1 號位</div>
-            <select class="custom-select select-active-player" data-slot="0"></select>
-            <div class="score-input-wrapper">
-              <label>當將淨輸贏 ($)</label>
-              <input type="number" class="custom-input input-player-score" data-slot="0" placeholder="正贏負輸" step="10">
-              <div class="touch-modifiers">
-                <button type="button" class="mod-btn" data-slot="0" data-val="100">+100</button>
-                <button type="button" class="mod-btn" data-slot="0" data-val="-100">-100</button>
-                <button type="button" class="mod-btn" data-slot="0" data-val="500">+500</button>
-                <button type="button" class="mod-btn" data-slot="0" data-val="-500">-500</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slot 1 -->
-          <div class="player-score-card" data-slot="1">
-            <div class="card-tag">南家 / 2 號位</div>
-            <select class="custom-select select-active-player" data-slot="1"></select>
-            <div class="score-input-wrapper">
-              <label>當將淨輸贏 ($)</label>
-              <input type="number" class="custom-input input-player-score" data-slot="1" placeholder="正贏負輸" step="10">
-              <div class="touch-modifiers">
-                <button type="button" class="mod-btn" data-slot="1" data-val="100">+100</button>
-                <button type="button" class="mod-btn" data-slot="1" data-val="-100">-100</button>
-                <button type="button" class="mod-btn" data-slot="1" data-val="500">+500</button>
-                <button type="button" class="mod-btn" data-slot="1" data-val="-500">-500</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slot 2 -->
-          <div class="player-score-card" data-slot="2">
-            <div class="card-tag">西家 / 3 號位</div>
-            <select class="custom-select select-active-player" data-slot="2"></select>
-            <div class="score-input-wrapper">
-              <label>當將淨輸贏 ($)</label>
-              <input type="number" class="custom-input input-player-score" data-slot="2" placeholder="正贏負輸" step="10">
-              <div class="touch-modifiers">
-                <button type="button" class="mod-btn" data-slot="2" data-val="100">+100</button>
-                <button type="button" class="mod-btn" data-slot="2" data-val="-100">-100</button>
-                <button type="button" class="mod-btn" data-slot="2" data-val="500">+500</button>
-                <button type="button" class="mod-btn" data-slot="2" data-val="-500">-500</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slot 3 -->
-          <div class="player-score-card" data-slot="3">
-            <div class="card-tag">北家 / 4 號位</div>
-            <select class="custom-select select-active-player" data-slot="3"></select>
-            <div class="score-input-wrapper">
-              <label>當將淨輸贏 ($)</label>
-              <input type="number" class="custom-input input-player-score" data-slot="3" placeholder="正贏負輸" step="10">
-              <div class="touch-modifiers">
-                <button type="button" class="mod-btn" data-slot="3" data-val="100">+100</button>
-                <button type="button" class="mod-btn" data-slot="3" data-val="-100">-100</button>
-                <button type="button" class="mod-btn" data-slot="3" data-val="500">+500</button>
-                <button type="button" class="mod-btn" data-slot="3" data-val="-500">-500</button>
-              </div>
-            </div>
-          </div>
+        <!-- Active Players Dynamic Inputs Grid -->
+        <div class="players-input-grid" id="players-input-grid">
+          <!-- Rendered dynamically by JS (default 4, minimum 4, support 5+ with delete buttons) -->
         </div>
 
         <!-- Balance Indicator Bar -->
@@ -714,6 +664,6 @@
 
   <!-- Firebase Configuration & Application Logic -->
   <script src="js/firebase-config.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=8.0"></script>
 </body>
 </html>
