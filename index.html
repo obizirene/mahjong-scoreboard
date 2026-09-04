@@ -33,7 +33,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=13.0">
+  <link rel="stylesheet" href="styles.css?v=14.0">
 </head>
 <body class="theme-emerald">
   <!-- Toast Notification Container -->
@@ -73,12 +73,6 @@
       <button class="tab-btn" data-tab="tab-history">
         <span class="tab-icon">📜</span> 戰績歷史
       </button>
-      <button class="tab-btn" data-tab="tab-calculator">
-        <span class="tab-icon">🧮</span> 底台算分器
-      </button>
-      <button class="tab-btn text-gold" data-tab="tab-ai-scanner">
-        <span class="tab-icon">🀅</span> 聽牌大師 (手動選牌)
-      </button>
     </div>
   </nav>
 
@@ -101,14 +95,6 @@
     <button class="mobile-tab-btn" data-tab="tab-history">
       <span class="mobile-tab-icon">📜</span>
       <span class="mobile-tab-label">戰績歷史</span>
-    </button>
-    <button class="mobile-tab-btn" data-tab="tab-calculator">
-      <span class="mobile-tab-icon">🧮</span>
-      <span class="mobile-tab-label">算分器</span>
-    </button>
-    <button class="mobile-tab-btn text-gold" data-tab="tab-ai-scanner">
-      <span class="mobile-tab-icon">🀅</span>
-      <span class="mobile-tab-label">聽牌大師</span>
     </button>
   </nav>
 
@@ -223,236 +209,7 @@
     </section>
 
 
-    <!-- ==================== TAB 4: 底台試算輔助器 ==================== -->
-    <section id="tab-calculator" class="tab-page">
-      <div class="section-header">
-        <div class="section-title">
-          <h2>🧮 底台算分器</h2>
-          <p>點選常見胡牌格式快捷鍵直接帶入台數</p>
-        </div>
-      </div>
 
-      <div class="calc-wrapper grid-2 mb-6">
-        <!-- Left: Rule Inputs -->
-        <div class="card glass-card">
-          <div class="card-header">
-            <h3>⚙️ 規則設定與計算</h3>
-          </div>
-          <div class="card-body form-grid">
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="field-label">底 ($)</label>
-                <input type="number" id="calc-base" class="custom-input" value="30" step="10">
-              </div>
-              <div class="form-group">
-                <label class="field-label">一台 ($)</label>
-                <input type="number" id="calc-tai" class="custom-input" value="10" step="5">
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label class="field-label">胡牌總台數</label>
-              <div class="tai-counter-input-row">
-                <input type="number" id="calc-tai-count" class="custom-input highlight-number" value="5" min="0" max="88">
-                <button id="btn-clear-tai-tags" class="btn btn-secondary btn-sm" style="white-space:nowrap;">🔄 清空</button>
-              </div>
-            </div>
-
-            <!-- Active Selected Hand Tags Display -->
-            <div class="selected-tags-box" id="selected-tags-box">
-              <span class="text-subtle">尚未點選快捷鍵，請點選下方常見格式！</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Results Card -->
-        <div class="card glass-card highlight-card">
-          <div class="card-header">
-            <h3>💰 結算金額</h3>
-          </div>
-          <div class="card-body calc-results">
-            <div class="result-box">
-              <span class="result-label">放銃者單獨支付 (1 人)</span>
-              <span class="result-value text-gold" id="result-ron">$ 80</span>
-              <span class="result-desc" id="result-ron-desc">= 1 底 ($30) + 5 台 ($50)</span>
-            </div>
-            <div class="result-box mt-4">
-              <span class="result-label">自摸者每人應付 (3 人各付)</span>
-              <span class="result-value text-emerald" id="result-tsumo">$ 80 / 人</span>
-              <span class="result-desc">自摸總收益 = <strong id="result-tsumo-total" class="text-gold">$ 240</strong></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Preset Hand Format Sections -->
-      <div class="card glass-card">
-        <div class="card-header">
-          <h3>⚡ 台灣麻將常見胡牌格式快捷鍵</h3>
-        </div>
-        <div class="card-body form-grid">
-          
-          <!-- Category 1: Basic & Scenarios -->
-          <div class="hand-preset-section">
-            <h4 class="preset-section-title">🀄 1. 基礎情境與門清/自摸</h4>
-            <div class="preset-pills-grid">
-              <button class="tai-tag-btn" data-name="門清" data-tai="1">門清 (+1台)</button>
-              <button class="tai-tag-btn" data-name="自摸" data-tai="1">自摸 (+1台)</button>
-              <button class="tai-tag-btn" data-name="門清自摸" data-tai="3">門清自摸 (+3台)</button>
-              <button class="tai-tag-btn" data-name="平胡" data-tai="1">平胡 (+1台)</button>
-              <button class="tai-tag-btn" data-name="花牌/正花" data-tai="1">花牌 (+1台)</button>
-              <button class="tai-tag-btn" data-name="風刻/門風" data-tai="1">風刻 (+1台)</button>
-              <button class="tai-tag-btn" data-name="莊家" data-tai="1">莊家 (+1台)</button>
-              <button class="tai-tag-btn" data-name="連一拉一" data-tai="3">連一拉一 (+3台)</button>
-              <button class="tai-tag-btn" data-name="連二拉二" data-tai="5">連二拉二 (+5台)</button>
-              <button class="tai-tag-btn" data-name="連三拉三" data-tai="7">連三拉三 (+7台)</button>
-              <button class="tai-tag-btn" data-name="槓上開花" data-tai="1">槓上開花 (+1台)</button>
-              <button class="tai-tag-btn" data-name="海底撈月" data-tai="1">海底撈月 (+1台)</button>
-            </div>
-          </div>
-
-          <hr class="divider">
-
-          <!-- Category 2: Card Combinations -->
-          <div class="hand-preset-section">
-            <h4 class="preset-section-title">🀇 2. 牌型組合加台</h4>
-            <div class="preset-pills-grid">
-              <button class="tai-tag-btn" data-name="碰碰胡" data-tai="4">碰碰胡 (+4台)</button>
-              <button class="tai-tag-btn" data-name="三暗刻" data-tai="2">三暗刻 (+2台)</button>
-              <button class="tai-tag-btn" data-name="四暗刻" data-tai="5">四暗刻 (+5台)</button>
-              <button class="tai-tag-btn" data-name="五暗刻" data-tai="8">五暗刻 (+8台)</button>
-              <button class="tai-tag-btn" data-name="混一色" data-tai="4">混一色 (+4台)</button>
-              <button class="tai-tag-btn" data-name="清一色" data-tai="8">清一色 (+8台)</button>
-              <button class="tai-tag-btn" data-name="字一色" data-tai="16">字一色 (+16台)</button>
-              <button class="tai-tag-btn" data-name="混全求人" data-tai="4">混全求人 (+4台)</button>
-            </div>
-          </div>
-
-          <hr class="divider">
-
-          <!-- Category 3: Special Big Hands -->
-          <div class="hand-preset-section">
-            <h4 class="preset-section-title">👑 3. 滿台大牌特型</h4>
-            <div class="preset-pills-grid">
-              <button class="tai-tag-btn" data-name="小三元" data-tai="4">小三元 (+4台)</button>
-              <button class="tai-tag-btn" data-name="大三元" data-tai="8">大三元 (+8台)</button>
-              <button class="tai-tag-btn" data-name="小四喜" data-tai="8">小四喜 (+8台)</button>
-              <button class="tai-tag-btn" data-name="大四喜" data-tai="16">大四喜 (+16台)</button>
-              <button class="tai-tag-btn" data-name="八仙過海" data-tai="8">八仙過海 (+8台)</button>
-              <button class="tai-tag-btn" data-name="七搶一" data-tai="8">七搶一 (+8台)</button>
-              <button class="tai-tag-btn" data-name="天胡" data-tai="16">天胡 (+16台)</button>
-              <button class="tai-tag-btn" data-name="地胡" data-tai="8">地胡 (+8台)</button>
-              <button class="tai-tag-btn" data-name="國士無雙" data-tai="16">國士無雙 (+16台)</button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-
-    <!-- ==================== TAB 5: 聽牌大師 (手動選擇手牌算牌) ==================== -->
-    <section id="tab-ai-scanner" class="tab-page">
-      <div class="section-header">
-        <div class="section-title">
-          <h2>🀅 聽牌大師 (手動選擇手牌)</h2>
-          <p>點選下方麻將牌型組合手牌 (16 或 17 張)，系統將即時為您精準演算聽牌面數與最佳打牌建議！</p>
-        </div>
-      </div>
-
-      <!-- Interactive Current Hand Rack (16 / 17 Tiles) -->
-      <div class="card glass-card mb-6">
-        <div class="card-header">
-          <h3>🀄 當前手牌明細 (<span id="ai-tile-count">0</span> 張)</h3>
-          <button id="btn-clear-ai-hand" class="btn btn-xs btn-outline">🔄 清空手牌</button>
-        </div>
-        <div class="card-body">
-          <div class="ai-hand-rack" id="ai-hand-rack">
-            <span class="text-subtle">尚未新增手牌，請下方點選牌型！</span>
-          </div>
-
-          <hr class="divider">
-
-          <!-- Tile Selection Picker (萬 筒 條 字) -->
-          <div class="tile-picker-container">
-            <h4 class="preset-section-title">➕ 點擊牌型一秒加入手牌：</h4>
-            <div class="picker-tabs">
-              <!-- 萬 -->
-              <div class="picker-group">
-                <span class="group-label">萬子:</span>
-                <div class="picker-pills">
-                  <button class="picker-tile-btn" data-code="m1">1萬</button>
-                  <button class="picker-tile-btn" data-code="m2">2萬</button>
-                  <button class="picker-tile-btn" data-code="m3">3萬</button>
-                  <button class="picker-tile-btn" data-code="m4">4萬</button>
-                  <button class="picker-tile-btn" data-code="m5">5萬</button>
-                  <button class="picker-tile-btn" data-code="m6">6萬</button>
-                  <button class="picker-tile-btn" data-code="m7">7萬</button>
-                  <button class="picker-tile-btn" data-code="m8">8萬</button>
-                  <button class="picker-tile-btn" data-code="m9">9萬</button>
-                </div>
-              </div>
-              <!-- 筒 -->
-              <div class="picker-group mt-2">
-                <span class="group-label">筒子:</span>
-                <div class="picker-pills">
-                  <button class="picker-tile-btn" data-code="p1">1筒</button>
-                  <button class="picker-tile-btn" data-code="p2">2筒</button>
-                  <button class="picker-tile-btn" data-code="p3">3筒</button>
-                  <button class="picker-tile-btn" data-code="p4">4筒</button>
-                  <button class="picker-tile-btn" data-code="p5">5筒</button>
-                  <button class="picker-tile-btn" data-code="p6">6筒</button>
-                  <button class="picker-tile-btn" data-code="p7">7筒</button>
-                  <button class="picker-tile-btn" data-code="p8">8筒</button>
-                  <button class="picker-tile-btn" data-code="p9">9筒</button>
-                </div>
-              </div>
-              <!-- 條 -->
-              <div class="picker-group mt-2">
-                <span class="group-label">索子:</span>
-                <div class="picker-pills">
-                  <button class="picker-tile-btn" data-code="s1">1條</button>
-                  <button class="picker-tile-btn" data-code="s2">2條</button>
-                  <button class="picker-tile-btn" data-code="s3">3條</button>
-                  <button class="picker-tile-btn" data-code="s4">4條</button>
-                  <button class="picker-tile-btn" data-code="s5">5條</button>
-                  <button class="picker-tile-btn" data-code="s6">6條</button>
-                  <button class="picker-tile-btn" data-code="s7">7條</button>
-                  <button class="picker-tile-btn" data-code="s8">8條</button>
-                  <button class="picker-tile-btn" data-code="s9">9條</button>
-                </div>
-              </div>
-              <!-- 字 -->
-              <div class="picker-group mt-2">
-                <span class="group-label">字牌:</span>
-                <div class="picker-pills">
-                  <button class="picker-tile-btn" data-code="z1">東</button>
-                  <button class="picker-tile-btn" data-code="z2">南</button>
-                  <button class="picker-tile-btn" data-code="z3">西</button>
-                  <button class="picker-tile-btn" data-code="z4">北</button>
-                  <button class="picker-tile-btn text-red" data-code="z5">中</button>
-                  <button class="picker-tile-btn text-emerald" data-code="z6">發</button>
-                  <button class="picker-tile-btn" data-code="z7">白</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI Analysis Result Panel -->
-      <div class="card glass-card highlight-card">
-        <div class="card-header">
-          <h3>⚡ 3. AI 聽牌分析結果</h3>
-        </div>
-        <div class="card-body" id="ai-result-panel">
-          <div class="ai-empty-placeholder">
-            <span class="ai-brain-icon">🧠</span>
-            <p>請加入手牌（如 16 張或 17 張），系統將自動計算進牌與最佳聽牌方案！</p>
-          </div>
-        </div>
-      </div>
-    </section>
 
   </main>
 
@@ -658,6 +415,6 @@
 
   <!-- Firebase Configuration & Application Logic -->
   <script src="js/firebase-config.js"></script>
-  <script src="js/app.js?v=13.0"></script>
+  <script src="js/app.js?v=14.0"></script>
 </body>
 </html>
