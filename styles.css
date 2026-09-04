@@ -749,6 +749,8 @@ body {
 
 .custom-input, .custom-select {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: rgba(7, 23, 16, 0.9);
   border: 1px solid var(--card-border);
   color: #ffffff;
@@ -761,15 +763,31 @@ body {
 }
 
 .custom-input[type="date"] {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: block;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   text-align: center;
   font-weight: 700;
   color-scheme: dark;
 }
 
-.meta-row-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+.custom-input[type="date"]::-webkit-date-and-time-value {
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.8;
 }
 
 .custom-input:focus, .custom-select:focus {

@@ -33,7 +33,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=11.0">
+  <link rel="stylesheet" href="styles.css?v=12.0">
 </head>
 <body class="theme-emerald">
   <!-- Toast Notification Container -->
@@ -471,18 +471,16 @@
       </div>
       <div class="modal-body">
         <!-- Session Meta -->
-        <div class="session-meta-grid mb-4">
-          <div class="meta-row-2col">
-            <div class="form-group">
-              <label class="field-label">📅 比賽日期</label>
-              <input type="date" id="log-date" class="custom-input">
-            </div>
-            <div class="form-group">
-              <label class="field-label">🀄 將數標籤</label>
-              <input type="text" id="log-round-title" class="custom-input" placeholder="例：第 1 將">
-            </div>
+        <div class="form-grid mb-4">
+          <div class="form-group">
+            <label class="field-label">📅 比賽日期</label>
+            <input type="date" id="log-date" class="custom-input">
           </div>
-          <div class="form-group mt-2">
+          <div class="form-group">
+            <label class="field-label">🀄 將數標籤</label>
+            <input type="text" id="log-round-title" class="custom-input" placeholder="例：第 1 將">
+          </div>
+          <div class="form-group">
             <label class="field-label">✏️ 備註註記</label>
             <input type="text" id="log-note" class="custom-input" placeholder="例：東風圈大三元/小明槓上開花">
           </div>
@@ -666,6 +664,6 @@
 
   <!-- Firebase Configuration & Application Logic -->
   <script src="js/firebase-config.js"></script>
-  <script src="js/app.js?v=11.0"></script>
+  <script src="js/app.js?v=12.0"></script>
 </body>
 </html>
