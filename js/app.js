@@ -521,9 +521,9 @@ function renderMVPView() {
   const pDesc = document.getElementById('mvp-title-p');
   const tableTitle = document.getElementById('table-header-title');
 
-  if (h2) h2.textContent = isYear ? `👑 ${AppState.selectedYear} 年度 MVP 殿堂` : '🏆 月度 MVP 榮譽榜';
-  if (pDesc) pDesc.textContent = isYear ? `${AppState.selectedYear} 全年度累積總戰術力與戰績王者榮耀榜` : '當月戰局總收益與勝將率實時榜單';
-  if (tableTitle) tableTitle.textContent = isYear ? `📊 ${AppState.selectedYear} 全年度總戰績排行榜` : '📊 當月總戰績排行榜';
+  if (h2) h2.textContent = isYear ? `🏆 雀界傳說 ‧ ${AppState.selectedYear} 年度總決算` : '🏆 雀聖降臨 ‧ 近期風雲榜';
+  if (pDesc) pDesc.textContent = isYear ? '路遙知馬力，日久見牌技！三百六十五天的血流成河，見證年度最強雀聖的榮耀加冕。' : '牌品好人品自然好！實況轉播這個月誰得牌神眷顧，誰又是被針對的放槍王。';
+  if (tableTitle) tableTitle.textContent = isYear ? `📊 ${AppState.selectedYear} 年度瘋狗排行榜` : '📊 每月蕭郎排行榜';
 
   const podiumContainer = document.getElementById('podium-container');
   const awardsContainer = document.getElementById('special-awards-grid');
@@ -623,7 +623,7 @@ function renderMVPView() {
         `;
       };
 
-      const mvpTitle = isYear ? '年度雀神 (年度 MVP)' : '月度雀神 (MVP)';
+      const mvpTitle = isYear ? '年度雀神 (年度瘋狗)' : '當月雀神 (每月蕭郎)';
       const mvpDesc = isYear ? `${AppState.selectedYear} 全年度戰績淨利冠軍` : '當月戰績淨利冠軍';
       const winRateTitle = isYear ? '年度勝率王' : '勝率之王';
       const winRateDesc = isYear ? '全年度勝將率最高牌友' : '勝將率最高牌友';
