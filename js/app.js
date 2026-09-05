@@ -91,6 +91,19 @@ function applyCloudData(data) {
     });
   });
 
+  // Auto-select latest month that actually has game rounds
+  const months = getAvailableMonths();
+  const monthWithRounds = months.find(m => AppState.rounds.some(r => r.date && r.date.startsWith(m)));
+  const currentMonthRoundCount = AppState.rounds.filter(r => r.date && r.date.startsWith(AppState.selectedMonth)).length;
+  if (!AppState.selectedMonth || currentMonthRoundCount === 0) {
+    if (monthWithRounds) {
+      AppState.selectedMonth = monthWithRounds;
+    }
+  }
+
+  const countBadge = document.getElementById('player-count-badge');
+  if (countBadge) countBadge.textContent = AppState.players.length;
+
   saveLocalBackup();
   refreshAllViews();
 }
@@ -433,7 +446,8 @@ function initMVPSelectors() {
     if (selectMonth) {
       const months = getAvailableMonths();
       const monthWithRounds = months.find(m => AppState.rounds.some(r => r.date && r.date.startsWith(m)));
-      if (!AppState.selectedMonth || !months.includes(AppState.selectedMonth)) {
+      const currentMonthRoundCount = AppState.rounds.filter(r => r.date && r.date.startsWith(AppState.selectedMonth)).length;
+      if (!AppState.selectedMonth || !months.includes(AppState.selectedMonth) || (currentMonthRoundCount === 0 && monthWithRounds)) {
         AppState.selectedMonth = monthWithRounds || months[0];
       }
       selectMonth.innerHTML = months.map(m => {
@@ -1605,7 +1619,10 @@ function initCalculator() {
   const btnClearTags = document.getElementById('btn-clear-tai-tags');
   const tagBtns = document.querySelectorAll('.tai-tag-btn');
 
+  if (!baseInput || !taiInput || !taiCountInput) return;
+
   function calculate() {
+    if (!baseInput || !taiInput || !taiCountInput) return;
     const base = Math.max(0, parseInt(baseInput.value, 10) || 0);
     const tai = Math.max(0, parseInt(taiInput.value, 10) || 0);
     const taiCount = Math.max(0, parseInt(taiCountInput.value, 10) || 0);
@@ -1685,6 +1702,7 @@ function renderCalculatorView() {
 function initAIScanner() {
   const pickerBtns = document.querySelectorAll('.picker-tile-btn');
   const btnClearHand = document.getElementById('btn-clear-ai-hand');
+  if (pickerBtns.length === 0 && !btnClearHand) return;
 
   pickerBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2048,28 +2066,26 @@ function initBackupModal() {
   }
 
   if (btnForceSync) {
-    btnForceSync.addEventListener('click', () => {
+    btnForceSync.addEventListener('click', async () => {
       const dot = document.getElementById('sync-dot');
       if (dot) dot.classList.add('syncing');
-      setTimeout(() => {
-        if (dot) dot.classList.remove('syncing');
-        if (AppState.firebaseReady && AppState.rtdbRef) {
-          AppState.rtdbRef.once('value').then(snap => {
-            const data = snap.val();
-            if (data && data.players) {
-              AppState.players = Array.isArray(data.players) ? data.players : Object.values(data.players);
-              AppState.rounds = Array.isArray(data.rounds) ? data.rounds : Object.values(data.rounds || {});
-              saveLocalBackup();
-              refreshAllViews();
-            }
-            showToast('✅ 雲端戰績資料已重新整理並同步！', 'success');
-          });
+      try {
+        const ok = await fetchCloudDataRest();
+        if (ok) {
+          showToast('✅ 雲端戰績資料已重新整理並同步！', 'success');
         } else {
           loadLocalState();
           refreshAllViews();
           showToast('ℹ️ 本機戰績已刷新', 'info');
         }
-      }, 500);
+      } catch (e) {
+        loadLocalState();
+        refreshAllViews();
+      } finally {
+        setTimeout(() => {
+          if (dot) dot.classList.remove('syncing');
+        }, 400);
+      }
     });
   }
 }
@@ -2098,30 +2114,41 @@ function initModalCloseHandlers() {
 // 15. MAIN INITIALIZATION BOOTSTRAP
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
-  loadLocalState();
-  initNavigation();
-  initMVPSelectors();
-  initScoreLoggerModal();
-  initPlayerFormModal();
-  initAvatarCropper();
-  initCalculator();
-  initAIScanner();
-  initBackupModal();
-  initModalCloseHandlers();
+  try {
+    loadLocalState();
+    initNavigation();
+    initMVPSelectors();
+    initScoreLoggerModal();
+    initPlayerFormModal();
+    initAvatarCropper();
+    initCalculator();
+    initAIScanner();
+    initBackupModal();
+    initModalCloseHandlers();
 
-  const searchInput = document.getElementById('input-history-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      renderHistoryView();
-    });
+    const searchInput = document.getElementById('input-history-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        renderHistoryView();
+      });
+    }
+
+    refreshAllViews();
+  } catch (err) {
+    console.error('Error during initial UI setup:', err);
   }
 
-  // Initial local render
-  refreshAllViews();
-
   // 1. Instant REST cloud sync (guarantees data loads immediately in <200ms)
-  await fetchCloudDataRest();
+  try {
+    await fetchCloudDataRest();
+  } catch (e) {
+    console.error('REST cloud sync error:', e);
+  }
 
   // 2. Connect Firebase WebSocket for live push updates
-  initFirebase();
+  try {
+    initFirebase();
+  } catch (e) {
+    console.error('Firebase init error:', e);
+  }
 });
