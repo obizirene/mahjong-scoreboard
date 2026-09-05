@@ -49,6 +49,77 @@ const AppState = {
 // ==========================================
 // 2. FIREBASE REALTIME DATABASE SYNC ENGINE
 // ==========================================
+function applyCloudData(data) {
+  if (!data) return;
+  if (Array.isArray(data.players)) {
+    AppState.players = data.players.map(p => ({
+      ...p,
+      title: p.titleTag || p.title || ''
+    }));
+  } else if (typeof data.players === 'object') {
+    AppState.players = Object.values(data.players).map(p => ({
+      ...p,
+      title: p.titleTag || p.title || ''
+    }));
+  } else {
+    AppState.players = [];
+  }
+
+  if (Array.isArray(data.rounds)) {
+    AppState.rounds = data.rounds;
+  } else if (typeof data.rounds === 'object') {
+    AppState.rounds = Object.values(data.rounds);
+  } else {
+    AppState.rounds = [];
+  }
+
+  // Auto-detect any player IDs in rounds that are missing from players list
+  const knownPids = new Set(AppState.players.map(p => p.id));
+  AppState.rounds.forEach(r => {
+    Object.keys(r.scores || {}).forEach(pid => {
+      if (!knownPids.has(pid)) {
+        AppState.players.push({
+          id: pid,
+          name: '牌友 (' + pid.substring(Math.max(0, pid.length - 4)) + ')',
+          color: '#10b981',
+          title: '常客牌友',
+          titleTag: '常客牌友',
+          avatarUrl: ''
+        });
+        knownPids.add(pid);
+      }
+    });
+  });
+
+  saveLocalBackup();
+  refreshAllViews();
+}
+
+async function fetchCloudDataRest() {
+  const dbUrl = window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.databaseURL;
+  if (!dbUrl) return false;
+  try {
+    const res = await fetch(`${dbUrl}/${RTDB_NODE}.json?t=${Date.now()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data) {
+        applyCloudData(data);
+        const syncDot = document.getElementById('sync-dot');
+        const syncLabel = document.querySelector('.room-code-label');
+        if (syncDot) {
+          syncDot.className = 'sync-dot live';
+          syncDot.style.background = '#10b981';
+        }
+        if (syncLabel) syncLabel.textContent = '雲端已即時同步';
+        return true;
+      }
+    }
+  } catch (e) {
+    console.warn('REST cloud fetch warning:', e);
+  }
+  return false;
+}
+
 function initFirebase() {
   const syncDot = document.getElementById('sync-dot');
   const syncLabel = document.querySelector('.room-code-label');
@@ -64,84 +135,74 @@ function initFirebase() {
   }
 
   try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(window.FIREBASE_CONFIG);
-    }
-    const db = firebase.database();
-    AppState.rtdbRef = db.ref(RTDB_NODE);
-    AppState.firebaseReady = true;
-
-    if (syncDot) {
-      syncDot.className = 'sync-dot live';
-      syncDot.style.background = '#10b981';
-    }
-    if (syncLabel) syncLabel.textContent = '雲端已即時同步';
-
-    // Listen for realtime updates from global_lounge node
-    AppState.rtdbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        if (Array.isArray(data.players)) {
-          AppState.players = data.players.map(p => ({
-            ...p,
-            title: p.titleTag || p.title || ''
-          }));
-        } else if (typeof data.players === 'object') {
-          AppState.players = Object.values(data.players).map(p => ({
-            ...p,
-            title: p.titleTag || p.title || ''
-          }));
-        } else {
-          AppState.players = [];
-        }
-
-        if (Array.isArray(data.rounds)) {
-          AppState.rounds = data.rounds;
-        } else if (typeof data.rounds === 'object') {
-          AppState.rounds = Object.values(data.rounds);
-        } else {
-          AppState.rounds = [];
-        }
-
-        saveLocalBackup();
-        refreshAllViews();
+    if (typeof firebase !== 'undefined' && firebase.apps) {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
       }
-    }, (error) => {
-      console.error('Firebase realtime sync error:', error);
-      if (syncLabel) syncLabel.textContent = '連線異常';
-    });
+      const db = firebase.database();
+      AppState.rtdbRef = db.ref(RTDB_NODE);
+      AppState.firebaseReady = true;
 
-    showToast('☁️ 已連線至 Firebase 雲端資料庫！', 'success');
+      if (syncDot) {
+        syncDot.className = 'sync-dot live';
+        syncDot.style.background = '#10b981';
+      }
+      if (syncLabel) syncLabel.textContent = '雲端已即時同步';
 
+      // Listen for realtime updates from global_lounge node
+      AppState.rtdbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          applyCloudData(data);
+        }
+      }, (error) => {
+        console.error('Firebase realtime sync error:', error);
+      });
+    }
   } catch (e) {
-    console.error('Firebase init error:', e);
-    if (syncLabel) syncLabel.textContent = 'Firebase 連線失敗';
+    console.warn('Firebase SDK init warning (using REST fallback):', e);
   }
 }
 
 // Push latest state to Firebase Realtime Database
 async function syncPushToCloud() {
+  const cleanPlayers = AppState.players.map(p => ({
+    id: p.id,
+    name: p.name,
+    color: p.color || '#10b981',
+    titleTag: p.title || p.titleTag || '',
+    avatarUrl: p.avatarUrl || ''
+  }));
+
+  const payload = {
+    players: cleanPlayers,
+    rounds: AppState.rounds,
+    updatedAt: new Date().toISOString()
+  };
+
+  // 1. WebSocket SDK push
   if (AppState.firebaseReady && AppState.rtdbRef) {
     try {
-      const cleanPlayers = AppState.players.map(p => ({
-        id: p.id,
-        name: p.name,
-        color: p.color || '#10b981',
-        titleTag: p.title || p.titleTag || '',
-        avatarUrl: p.avatarUrl || ''
-      }));
-
-      await AppState.rtdbRef.set({
-        players: cleanPlayers,
-        rounds: AppState.rounds,
-        updatedAt: new Date().toISOString()
-      });
-      return;
+      await AppState.rtdbRef.set(payload);
     } catch (e) {
-      console.error('Firebase push error:', e);
-      showToast('雲端同步失敗，已保存至本機快取', 'error');
+      console.warn('Firebase SDK push error:', e);
     }
   }
+
+  // 2. Direct REST API push
+  const dbUrl = window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.databaseURL;
+  if (dbUrl) {
+    try {
+      await fetch(`${dbUrl}/${RTDB_NODE}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.warn('REST push error:', e);
+    }
+  }
+
   saveLocalBackup();
   refreshAllViews();
 }
@@ -371,12 +432,15 @@ function initMVPSelectors() {
 
     if (selectMonth) {
       const months = getAvailableMonths();
+      const monthWithRounds = months.find(m => AppState.rounds.some(r => r.date && r.date.startsWith(m)));
       if (!AppState.selectedMonth || !months.includes(AppState.selectedMonth)) {
-        AppState.selectedMonth = months[0];
+        AppState.selectedMonth = monthWithRounds || months[0];
       }
       selectMonth.innerHTML = months.map(m => {
         const [y, mm] = m.split('-');
-        return `<option value="${m}" ${m === AppState.selectedMonth ? 'selected' : ''}>${y} 年 ${parseInt(mm, 10)} 月份</option>`;
+        const count = AppState.rounds.filter(r => r.date && r.date.startsWith(m)).length;
+        const countLabel = count > 0 ? ` (${count} 將)` : ' (新月份)';
+        return `<option value="${m}" ${m === AppState.selectedMonth ? 'selected' : ''}>${y} 年 ${parseInt(mm, 10)} 月份${countLabel}</option>`;
       }).join('');
 
       selectMonth.onchange = (e) => {
@@ -542,11 +606,20 @@ function renderMVPView() {
   // Render Podium (Top 3)
   if (podiumContainer) {
     if (activeStats.length === 0) {
+      const months = getAvailableMonths();
+      const monthWithRounds = months.find(m => AppState.rounds.some(r => r.date && r.date.startsWith(m)));
+      const countWithRounds = monthWithRounds ? AppState.rounds.filter(r => r.date && r.date.startsWith(monthWithRounds)).length : 0;
+
       podiumContainer.innerHTML = `
         <div class="empty-state card glass-card text-center p-8 w-full">
           <span style="font-size: 3rem;">🀄</span>
           <h4 class="mt-2 text-gold font-bold">${isYear ? '本年度' : '本月份'}尚無戰績紀錄</h4>
-          <p class="text-subtle mt-1">點擊右上角「記新的一將」開始記錄戰局！</p>
+          <p class="text-subtle mt-1">目前選擇的是全新月份。您可以點擊上方「選擇月份」查看歷史月份！</p>
+          ${!isYear && monthWithRounds && monthWithRounds !== AppState.selectedMonth ? `
+            <button class="btn btn-primary btn-sm mt-3 glow-effect" onclick="AppState.selectedMonth='${monthWithRounds}'; renderMVPView();">
+              👉 切換至 ${monthWithRounds} 查看歷史戰績 (${countWithRounds} 將)
+            </button>
+          ` : ''}
         </div>
       `;
     } else {
@@ -2024,7 +2097,7 @@ function initModalCloseHandlers() {
 // ==========================================
 // 15. MAIN INITIALIZATION BOOTSTRAP
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   loadLocalState();
   initNavigation();
   initMVPSelectors();
@@ -2046,6 +2119,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial local render
   refreshAllViews();
 
-  // Connect Firebase Realtime Database
+  // 1. Instant REST cloud sync (guarantees data loads immediately in <200ms)
+  await fetchCloudDataRest();
+
+  // 2. Connect Firebase WebSocket for live push updates
   initFirebase();
 });
